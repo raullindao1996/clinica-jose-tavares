@@ -639,6 +639,8 @@
   .tweaks select, .tweaks input[type=range]{font:inherit;padding:6px 8px;border:1px solid var(--ink-20);border-radius:8px;background:#fff}
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body>
 
@@ -1228,46 +1230,47 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Scrolly Video Logic
+  // Scrolly Video Logic with GSAP
   (function(){
     const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
-    const title = document.getElementById('scrollyTitle');
-    let targetTime = 0;
-    let actualTime = 0;
     
-    function updateVideo() {
-      if (!vid || !container || !vid.duration) return;
-      
-      const rect = container.getBoundingClientRect();
-      const scrollStart = -rect.top;
-      const scrollRange = container.offsetHeight - window.innerHeight;
-      
-      let progress = scrollStart / scrollRange;
-      progress = Math.max(0, Math.min(1, progress));
-      
-      targetTime = progress * vid.duration;
-      
-      // Interpolate for smoothness
-      actualTime += (targetTime - actualTime) * 0.15;
-      
-      // Update video time
-      vid.currentTime = actualTime;
-      
-      // Subtle title effect
-      title.style.transform = `translateY(${(progress * -60)}px)`;
-      title.style.opacity = progress > 0.95 ? (1 - (progress - 0.95) * 20) : (progress < 0.05 ? progress * 20 : 1);
-      
-      if (Math.abs(targetTime - actualTime) > 0.01) {
-        requestAnimationFrame(updateVideo);
-      }
-    }
+    if (!vid) return;
 
-    if (vid) {
-      window.addEventListener('scroll', () => {
-        requestAnimationFrame(updateVideo);
+    gsap.registerPlugin(ScrollTrigger);
+
+    vid.addEventListener('loadedmetadata', () => {
+      // Create a GSAP timeline for the video
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: container,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1, // Smoothly transition over 1 second
+          pin: false // The container already has sticky video wrap
+        }
+      })
+      .fromTo(vid, 
+        { currentTime: 0 }, 
+        { currentTime: vid.duration || 1, ease: "none" }
+      );
+
+      // Animate content separately for more "pop"
+      gsap.to("#scrollyTitle", {
+        scrollTrigger: {
+          trigger: container,
+          start: "top center",
+          end: "center center",
+          scrub: true
+        },
+        y: -100,
+        opacity: 1
       });
-      vid.addEventListener('loadedmetadata', updateVideo);
+    });
+    
+    // Fallback if metadata is already loaded
+    if (vid.readyState >= 2) {
+      vid.dispatchEvent(new Event('loadedmetadata'));
     }
   })();
 
