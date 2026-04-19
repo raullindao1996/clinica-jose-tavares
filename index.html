@@ -568,10 +568,10 @@
   }
   .scrolly-content {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 100%;
-    height: 100%;
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -587,12 +587,14 @@
     font-size: clamp(2rem, 8vw, 4.5rem);
     line-height: 1.1;
     margin-bottom: 24px;
-    text-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+    opacity: 0;
+    transition: transform 0.1s ease-out;
   }
   .scrolly-content p {
     font-size: clamp(1rem, 2vw, 1.25rem);
     max-width: 600px;
-    opacity: 0.9;
+    opacity: 0;
     background: rgba(0,0,0,0.4);
     padding: 8px 16px;
     border-radius: 99px;
@@ -1227,12 +1229,45 @@
   
   // Scrolly Video with ScrollyVideo.js
   (function(){
+    const container = document.querySelector('.scrolly-container');
+    const title = document.getElementById('scrollyTitle');
+    const subtitle = document.getElementById('scrollySubtitle');
+    const content = document.querySelector('.scrolly-content');
+
     new ScrollyVideo({
       scrollyVideoContainer: "scrolly-video-target",
       src: "assets/tooth-restore.mp4",
       transitionAlpha: true,
       full: true,
-      useCanvas: true // This is the key for smoothness!
+      useCanvas: true
+    });
+
+    window.addEventListener('scroll', () => {
+      const rect = container.getBoundingClientRect();
+      const scrollRange = container.offsetHeight - window.innerHeight;
+      const scrollStart = -rect.top;
+      
+      let progress = scrollStart / scrollRange;
+      progress = Math.max(0, Math.min(1, progress));
+
+      // Fade-in logic: start appearing at 30% progress, full at 60%
+      let opacity = 0;
+      if (progress > 0.25) {
+        opacity = (progress - 0.25) * 3; // Fades in between 25% and 58%
+      }
+      opacity = Math.min(1, opacity);
+
+      // Fade-out/Scroll-away at the very end
+      if (progress > 0.9) {
+        const exitProgress = (progress - 0.9) * 10;
+        content.style.transform = `translate(-50%, calc(-50% - ${exitProgress * 100}px))`;
+        content.style.opacity = 1 - exitProgress;
+      } else {
+        content.style.transform = `translate(-50%, -50%)`;
+        content.style.opacity = opacity;
+        title.style.opacity = opacity;
+        subtitle.style.opacity = opacity;
+      }
     });
   })();
 
