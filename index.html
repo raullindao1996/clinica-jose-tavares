@@ -718,7 +718,9 @@
 <!-- SCROLLY RESTORATION -->
 <section class="scrolly-container" id="restauracao">
   <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; background: #0d1117; display: flex; align-items: center; justify-content: center;">
-    <img id="restoreGif" src="assets/tooth-restore.gif" alt="Restauração Dental" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+    <video id="restoreVideo" preload="auto" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+      <source src="assets/tooth-restore.mp4" type="video/mp4">
+    </video>
     <div class="scrolly-content">
       <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
       <p id="scrollySubtitle">Cada detalhe planejado para sua saúde</p>
@@ -1228,25 +1230,28 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Scrolly Content Logic (GIF version)
+  // Scrolly Video (Reverted & Direct)
   (function(){
+    const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
     const content = document.querySelector('.scrolly-content');
     
-    if (!container || !content) return;
+    if (!vid || !container) return;
 
-    function sync() {
+    function update() {
       const rect = container.getBoundingClientRect();
       const scrollRange = container.offsetHeight - window.innerHeight;
       const scrollStart = -rect.top;
       
       let progress = Math.max(0, Math.min(1, scrollStart / scrollRange));
       
-      // Update Text Opacity & Position
-      let textOpacity = 0;
-      if (progress > 0.2) {
-        textOpacity = Math.min(1, (progress - 0.2) * 4);
+      if (vid.duration) {
+        vid.currentTime = progress * vid.duration;
       }
+
+      // Text Logic
+      let textOpacity = 0;
+      if (progress > 0.25) textOpacity = Math.min(1, (progress - 0.25) * 4);
       
       let translateY = -50;
       if (progress > 0.9) {
@@ -1257,11 +1262,10 @@
 
       content.style.opacity = textOpacity;
       content.style.transform = `translate(-50%, ${translateY}%)`;
-
-      requestAnimationFrame(sync);
     }
-    
-    requestAnimationFrame(sync);
+
+    window.addEventListener('scroll', update);
+    vid.addEventListener('loadedmetadata', update);
   })();
 
   // helpers
