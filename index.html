@@ -641,7 +641,8 @@
   .tweaks select, .tweaks input[type=range]{font:inherit;padding:6px 8px;border:1px solid var(--ink-20);border-radius:8px;background:#fff}
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/scrolly-video@latest/dist/scrolly-video.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body>
 
@@ -718,8 +719,10 @@
 
 <!-- SCROLLY RESTORATION -->
 <section class="scrolly-container" id="restauracao">
-  <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden;">
-    <div id="scrolly-video-target" style="width: 100%; height: 100%;"></div>
+  <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; background: #0d1117;">
+    <video id="restoreVideo" preload="auto" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+      <source src="assets/tooth-restore.mp4" type="video/mp4">
+    </video>
     <div class="scrolly-content">
       <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
       <p id="scrollySubtitle">Cada detalhe planejado para sua saúde</p>
@@ -1229,48 +1232,57 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Scrolly Video with ScrollyVideo.js
+  // Scrolly Video with GSAP (Optimized)
   (function(){
+    const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
-    const title = document.getElementById('scrollyTitle');
-    const subtitle = document.getElementById('scrollySubtitle');
     const content = document.querySelector('.scrolly-content');
+    
+    if (!vid) return;
+    gsap.registerPlugin(ScrollTrigger);
 
-    new ScrollyVideo({
-      scrollyVideoContainer: "scrolly-video-target",
-      src: "assets/tooth-restore.mp4",
-      transitionAlpha: true,
-      full: true,
-      useCanvas: true
+    vid.addEventListener('loadedmetadata', () => {
+      // Background Video Scroll
+      gsap.to(vid, {
+        currentTime: vid.duration,
+        ease: "none",
+        scrollTrigger: {
+          trigger: container,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 0.1 // Low lag for better sync
+        }
+      });
+
+      // Text Fade-in and Stay
+      gsap.fromTo(content, 
+        { opacity: 0, y: 50 },
+        { 
+          opacity: 1, 
+          y: 0,
+          scrollTrigger: {
+            trigger: container,
+            start: "top 20%",
+            end: "top -20%",
+            scrub: true
+          }
+        }
+      );
+
+      // Final Scroll-out
+      gsap.to(content, {
+        y: -150,
+        opacity: 0,
+        scrollTrigger: {
+          trigger: container,
+          start: "bottom 110%",
+          end: "bottom bottom",
+          scrub: true
+        }
+      });
     });
 
-    window.addEventListener('scroll', () => {
-      const rect = container.getBoundingClientRect();
-      const scrollRange = container.offsetHeight - window.innerHeight;
-      const scrollStart = -rect.top;
-      
-      let progress = scrollStart / scrollRange;
-      progress = Math.max(0, Math.min(1, progress));
-
-      // Fade-in logic: start appearing at 30% progress, full at 60%
-      let opacity = 0;
-      if (progress > 0.25) {
-        opacity = (progress - 0.25) * 3; // Fades in between 25% and 58%
-      }
-      opacity = Math.min(1, opacity);
-
-      // Fade-out/Scroll-away at the very end
-      if (progress > 0.9) {
-        const exitProgress = (progress - 0.9) * 10;
-        content.style.transform = `translate(-50%, calc(-50% - ${exitProgress * 100}px))`;
-        content.style.opacity = 1 - exitProgress;
-      } else {
-        content.style.transform = `translate(-50%, -50%)`;
-        content.style.opacity = opacity;
-        title.style.opacity = opacity;
-        subtitle.style.opacity = opacity;
-      }
-    });
+    if (vid.readyState >= 2) vid.dispatchEvent(new Event('loadedmetadata'));
   })();
 
   // helpers
