@@ -639,8 +639,7 @@
   .tweaks select, .tweaks input[type=range]{font:inherit;padding:6px 8px;border:1px solid var(--ink-20);border-radius:8px;background:#fff}
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/scrolly-video@latest/dist/scrolly-video.js"></script>
 </head>
 <body>
 
@@ -717,14 +716,10 @@
 
 <!-- SCROLLY RESTORATION -->
 <section class="scrolly-container" id="restauracao">
-  <div class="scrolly-video-wrap">
-    <video id="restoreVideo" preload="auto" muted playsinline>
-      <source src="assets/tooth-restore.mp4" type="video/mp4">
-    </video>
-    <div class="scrolly-content">
-      <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
-      <p id="scrollySubtitle">Veja como devolvemos a forma e a função ao seu sorriso</p>
-    </div>
+  <div id="scrolly-video-target" style="width: 100%; height: 100vh;"></div>
+  <div class="scrolly-content">
+    <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
+    <p id="scrollySubtitle">Cada detalhe planejado para sua saúde</p>
   </div>
 </section>
 
@@ -1230,48 +1225,15 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Scrolly Video Logic with GSAP
+  // Scrolly Video with ScrollyVideo.js
   (function(){
-    const vid = document.getElementById('restoreVideo');
-    const container = document.querySelector('.scrolly-container');
-    
-    if (!vid) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    vid.addEventListener('loadedmetadata', () => {
-      // Create a GSAP timeline for the video
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: container,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1, // Smoothly transition over 1 second
-          pin: false // The container already has sticky video wrap
-        }
-      })
-      .fromTo(vid, 
-        { currentTime: 0 }, 
-        { currentTime: vid.duration || 1, ease: "none" }
-      );
-
-      // Animate content separately for more "pop"
-      gsap.to("#scrollyTitle", {
-        scrollTrigger: {
-          trigger: container,
-          start: "top center",
-          end: "center center",
-          scrub: true
-        },
-        y: -100,
-        opacity: 1
-      });
+    new ScrollyVideo({
+      scrollyVideoContainer: "scrolly-video-target",
+      src: "assets/tooth-restore.mp4",
+      transitionAlpha: true,
+      full: true,
+      useCanvas: true // This is the key for smoothness!
     });
-    
-    // Fallback if metadata is already loaded
-    if (vid.readyState >= 2) {
-      vid.dispatchEvent(new Event('loadedmetadata'));
-    }
   })();
 
   // helpers
