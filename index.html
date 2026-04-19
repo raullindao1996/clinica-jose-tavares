@@ -718,12 +718,7 @@
 <!-- SCROLLY RESTORATION -->
 <section class="scrolly-container" id="restauracao">
   <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; background: #0d1117; display: flex; align-items: center; justify-content: center;">
-    <div id="video-loading" style="position: absolute; color: rgba(255,255,255,0.5); font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">
-      Carregando experiência...
-    </div>
-    <video id="restoreVideo" preload="auto" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s;">
-      <!-- Video will be loaded via Blob for performance -->
-    </video>
+    <img id="restoreGif" src="assets/tooth-restore.gif" alt="Restauração Dental" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
     <div class="scrolly-content">
       <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
       <p id="scrollySubtitle">Cada detalhe planejado para sua saúde</p>
@@ -1233,77 +1228,40 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Definitive Scrolly Video Logic (Pre-cached Blob + Native Loop)
+  // Scrolly Content Logic (GIF version)
   (function(){
-    const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
-    const loader = document.getElementById('video-loading');
     const content = document.querySelector('.scrolly-content');
     
-    if (!vid || !container) return;
+    if (!container || !content) return;
 
-    // 1. Pre-fetch video as BLOB to ensure 100% local availability
-    fetch('assets/tooth-restore.mp4')
-      .then(response => response.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        vid.src = url;
-        vid.load();
-        
-        vid.oncanplaythrough = () => {
-          if (loader) loader.style.display = 'none';
-          vid.style.opacity = '0.8';
-          initScrolly();
-        };
-      })
-      .catch(err => {
-        console.error("Video load failed", err);
-        // Fallback to direct src if blob fails
-        vid.src = 'assets/tooth-restore.mp4';
-        initScrolly();
-      });
-
-    function initScrolly() {
-      let targetProgress = 0;
-      let currentProgress = 0;
-
-      function sync() {
-        const rect = container.getBoundingClientRect();
-        const scrollRange = container.offsetHeight - window.innerHeight;
-        const scrollStart = -rect.top;
-        
-        targetProgress = Math.max(0, Math.min(1, scrollStart / scrollRange));
-        
-        // Smooth interpolation (lerp)
-        currentProgress += (targetProgress - currentProgress) * 0.15;
-        
-        // Update Video
-        if (vid.duration) {
-          vid.currentTime = currentProgress * vid.duration;
-        }
-
-        // Update Text
-        let textOpacity = 0;
-        if (currentProgress > 0.2) {
-          textOpacity = Math.min(1, (currentProgress - 0.2) * 4);
-        }
-        
-        // Final exit sequence
-        let translateY = -50;
-        if (currentProgress > 0.9) {
-          const exit = (currentProgress - 0.9) * 10;
-          translateY = -50 - (exit * 100);
-          textOpacity = 1 - exit;
-        }
-
-        content.style.opacity = textOpacity;
-        content.style.transform = `translate(-50%, ${translateY}%)`;
-
-        requestAnimationFrame(sync);
+    function sync() {
+      const rect = container.getBoundingClientRect();
+      const scrollRange = container.offsetHeight - window.innerHeight;
+      const scrollStart = -rect.top;
+      
+      let progress = Math.max(0, Math.min(1, scrollStart / scrollRange));
+      
+      // Update Text Opacity & Position
+      let textOpacity = 0;
+      if (progress > 0.2) {
+        textOpacity = Math.min(1, (progress - 0.2) * 4);
       }
       
+      let translateY = -50;
+      if (progress > 0.9) {
+        const exit = (progress - 0.9) * 10;
+        translateY = -50 - (exit * 100);
+        textOpacity = 1 - exit;
+      }
+
+      content.style.opacity = textOpacity;
+      content.style.transform = `translate(-50%, ${translateY}%)`;
+
       requestAnimationFrame(sync);
     }
+    
+    requestAnimationFrame(sync);
   })();
 
   // helpers
