@@ -641,8 +641,6 @@
   .tweaks select, .tweaks input[type=range]{font:inherit;padding:6px 8px;border:1px solid var(--ink-20);border-radius:8px;background:#fff}
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body>
 
@@ -719,9 +717,12 @@
 
 <!-- SCROLLY RESTORATION -->
 <section class="scrolly-container" id="restauracao">
-  <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; background: #0d1117;">
-    <video id="restoreVideo" preload="auto" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
-      <source src="assets/tooth-restore.mp4" type="video/mp4">
+  <div class="scrolly-sticky-wrap" style="position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; background: #0d1117; display: flex; align-items: center; justify-content: center;">
+    <div id="video-loading" style="position: absolute; color: rgba(255,255,255,0.5); font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">
+      Carregando experiência...
+    </div>
+    <video id="restoreVideo" preload="auto" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s;">
+      <!-- Video will be loaded via Blob for performance -->
     </video>
     <div class="scrolly-content">
       <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
@@ -1232,57 +1233,77 @@
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
   
-  // Scrolly Video with GSAP (Optimized)
+  // Definitive Scrolly Video Logic (Pre-cached Blob + Native Loop)
   (function(){
     const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
+    const loader = document.getElementById('video-loading');
     const content = document.querySelector('.scrolly-content');
     
-    if (!vid) return;
-    gsap.registerPlugin(ScrollTrigger);
+    if (!vid || !container) return;
 
-    vid.addEventListener('loadedmetadata', () => {
-      // Background Video Scroll
-      gsap.to(vid, {
-        currentTime: vid.duration,
-        ease: "none",
-        scrollTrigger: {
-          trigger: container,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.1 // Low lag for better sync
-        }
+    // 1. Pre-fetch video as BLOB to ensure 100% local availability
+    fetch('assets/tooth-restore.mp4')
+      .then(response => response.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        vid.src = url;
+        vid.load();
+        
+        vid.oncanplaythrough = () => {
+          if (loader) loader.style.display = 'none';
+          vid.style.opacity = '0.8';
+          initScrolly();
+        };
+      })
+      .catch(err => {
+        console.error("Video load failed", err);
+        // Fallback to direct src if blob fails
+        vid.src = 'assets/tooth-restore.mp4';
+        initScrolly();
       });
 
-      // Text Fade-in and Stay
-      gsap.fromTo(content, 
-        { opacity: 0, y: 50 },
-        { 
-          opacity: 1, 
-          y: 0,
-          scrollTrigger: {
-            trigger: container,
-            start: "top 20%",
-            end: "top -20%",
-            scrub: true
-          }
-        }
-      );
+    function initScrolly() {
+      let targetProgress = 0;
+      let currentProgress = 0;
 
-      // Final Scroll-out
-      gsap.to(content, {
-        y: -150,
-        opacity: 0,
-        scrollTrigger: {
-          trigger: container,
-          start: "bottom 110%",
-          end: "bottom bottom",
-          scrub: true
+      function sync() {
+        const rect = container.getBoundingClientRect();
+        const scrollRange = container.offsetHeight - window.innerHeight;
+        const scrollStart = -rect.top;
+        
+        targetProgress = Math.max(0, Math.min(1, scrollStart / scrollRange));
+        
+        // Smooth interpolation (lerp)
+        currentProgress += (targetProgress - currentProgress) * 0.15;
+        
+        // Update Video
+        if (vid.duration) {
+          vid.currentTime = currentProgress * vid.duration;
         }
-      });
-    });
 
-    if (vid.readyState >= 2) vid.dispatchEvent(new Event('loadedmetadata'));
+        // Update Text
+        let textOpacity = 0;
+        if (currentProgress > 0.2) {
+          textOpacity = Math.min(1, (currentProgress - 0.2) * 4);
+        }
+        
+        // Final exit sequence
+        let translateY = -50;
+        if (currentProgress > 0.9) {
+          const exit = (currentProgress - 0.9) * 10;
+          translateY = -50 - (exit * 100);
+          textOpacity = 1 - exit;
+        }
+
+        content.style.opacity = textOpacity;
+        content.style.transform = `translate(-50%, ${translateY}%)`;
+
+        requestAnimationFrame(sync);
+      }
+      
+      requestAnimationFrame(sync);
+    }
   })();
 
   // helpers
