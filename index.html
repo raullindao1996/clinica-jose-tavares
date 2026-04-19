@@ -536,6 +536,69 @@
     font-size:13px;color:rgba(255,255,255,.5);
   }
 
+  /* Scrolly Section */
+  .scrolly-container {
+    height: 350vh;
+    position: relative;
+    background: #0d1117;
+    overflow: clip;
+  }
+  .scrolly-video-wrap {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .scrolly-video-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+    z-index: 5;
+  }
+  .scrolly-video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+  }
+  .scrolly-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    color: #fff;
+    text-align: center;
+    padding: 0 20px;
+  }
+  .scrolly-content h2 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 8vw, 4.5rem);
+    line-height: 1.1;
+    margin-bottom: 24px;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  }
+  .scrolly-content p {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    max-width: 600px;
+    opacity: 0.9;
+    background: rgba(0,0,0,0.4);
+    padding: 8px 16px;
+    border-radius: 99px;
+    backdrop-filter: blur(10px);
+  }
+
   /* Floating WhatsApp */
   .wa-float{
     position:fixed;right:22px;bottom:22px;z-index:40;
@@ -646,6 +709,19 @@
           <div class="s">Resposta em minutos</div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCROLLY RESTORATION -->
+<section class="scrolly-container" id="restauracao">
+  <div class="scrolly-video-wrap">
+    <video id="restoreVideo" preload="auto" muted playsinline>
+      <source src="assets/tooth-restore.mp4" type="video/mp4">
+    </video>
+    <div class="scrolly-content">
+      <h2 id="scrollyTitle">A ciência da <span class="script">reconstrução</span></h2>
+      <p id="scrollySubtitle">Veja como devolvemos a forma e a função ao seu sorriso</p>
     </div>
   </div>
 </section>
@@ -1151,6 +1227,38 @@
   document.querySelectorAll('#swatches .sw').forEach(s=>{
     s.classList.toggle('active', s.dataset.g.toLowerCase()===TWEAK_DEFAULTS.brandGreen.toLowerCase());
   });
+  
+  // Scrolly Video Logic
+  (function(){
+    const vid = document.getElementById('restoreVideo');
+    const container = document.querySelector('.scrolly-container');
+    const title = document.getElementById('scrollyTitle');
+    
+    function updateVideo() {
+      if (!vid || !container || !vid.duration) return;
+      
+      const rect = container.getBoundingClientRect();
+      const scrollStart = -rect.top;
+      const scrollRange = container.offsetHeight - window.innerHeight;
+      
+      let progress = scrollStart / scrollRange;
+      progress = Math.max(0, Math.min(1, progress));
+      
+      // Update video time
+      vid.currentTime = progress * vid.duration;
+      
+      // Subtle title effect
+      title.style.transform = `translateY(${(progress * -60)}px)`;
+      title.style.opacity = progress > 0.95 ? (1 - (progress - 0.95) * 20) : (progress < 0.05 ? progress * 20 : 1);
+    }
+
+    if (vid) {
+      window.addEventListener('scroll', () => {
+        requestAnimationFrame(updateVideo);
+      });
+      vid.addEventListener('loadedmetadata', updateVideo);
+    }
+  })();
 
   // helpers
   function shade(hex, percent){
