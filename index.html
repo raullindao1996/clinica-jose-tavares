@@ -1233,6 +1233,8 @@
     const vid = document.getElementById('restoreVideo');
     const container = document.querySelector('.scrolly-container');
     const title = document.getElementById('scrollyTitle');
+    let targetTime = 0;
+    let actualTime = 0;
     
     function updateVideo() {
       if (!vid || !container || !vid.duration) return;
@@ -1244,12 +1246,21 @@
       let progress = scrollStart / scrollRange;
       progress = Math.max(0, Math.min(1, progress));
       
+      targetTime = progress * vid.duration;
+      
+      // Interpolate for smoothness
+      actualTime += (targetTime - actualTime) * 0.15;
+      
       // Update video time
-      vid.currentTime = progress * vid.duration;
+      vid.currentTime = actualTime;
       
       // Subtle title effect
       title.style.transform = `translateY(${(progress * -60)}px)`;
       title.style.opacity = progress > 0.95 ? (1 - (progress - 0.95) * 20) : (progress < 0.05 ? progress * 20 : 1);
+      
+      if (Math.abs(targetTime - actualTime) > 0.01) {
+        requestAnimationFrame(updateVideo);
+      }
     }
 
     if (vid) {
